@@ -1,0 +1,10 @@
+build/
+
+.*
+!.gitignore
+!.vscode/tasks.json
+!.config
+
+__pycache__
+
+*.o
