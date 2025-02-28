@@ -448,9 +448,9 @@ static int do_stat(uffs_Object *obj, struct uffs_stat *buf)
 		buf->st_size = info.len;
 		buf->st_blksize = obj->dev->com.pg_data_size;
 		buf->st_blocks = 0;
-		buf->st_atime = info.info.last_modify;
-		buf->st_mtime = info.info.last_modify;
-		buf->st_ctime = info.info.create_time;
+		buf->st_atime_ = info.info.last_modify;
+		buf->st_mtime_ = info.info.last_modify;
+		buf->st_ctime_ = info.info.create_time;
 		buf->st_mode = (info.info.attr & FILE_ATTR_DIR ? US_IFDIR : US_IFREG);
 		if (info.info.attr & FILE_ATTR_WRITE)
 			buf->st_mode |= US_IRWXU;

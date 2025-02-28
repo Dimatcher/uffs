@@ -206,7 +206,7 @@ static int dfs_uffs_unmount(struct dfs_filesystem *fs)
     return -ENOENT;
 }
 
-static int dfs_uffs_mkfs(rt_device_t dev_id)
+static int dfs_uffs_mkfs(rt_device_t dev_id, const char *fs_name)
 {
     rt_base_t index;
     rt_uint32_t block;
@@ -275,7 +275,7 @@ static int dfs_uffs_statfs(struct dfs_filesystem *fs,
     return 0;
 }
 
-static int dfs_uffs_open(struct dfs_fd *file)
+static int dfs_uffs_open(struct dfs_file *file)
 {
     int fd;
     int oflag, mode;
@@ -288,7 +288,7 @@ static int dfs_uffs_open(struct dfs_fd *file)
 
         if (oflag & O_CREAT)   /* create a dir*/
         {
-            if (uffs_mkdir(file->path) < 0)
+            if (uffs_mkdir(file->vnode->path) < 0)
                 return uffs_result_to_dfs(uffs_get_error());
         }
         /* open dir */
@@ -296,8 +296,8 @@ static int dfs_uffs_open(struct dfs_fd *file)
         if (file_path == RT_NULL)
             return -ENOMEM;
 
-        if (file->path[0] == '/' && !(file->path[1] == 0))
-            rt_snprintf(file_path, FILE_PATH_MAX, "%s/", file->path);
+        if (file->vnode->path[0] == '/' && !(file->vnode->path[1] == 0))
+            rt_snprintf(file_path, FILE_PATH_MAX, "%s/", file->vnode->path);
         else
         {
             file_path[0] = '/';
@@ -330,7 +330,7 @@ static int dfs_uffs_open(struct dfs_fd *file)
     /* Creates a new file. The function fails if the file is already existing. */
     if (oflag & O_EXCL) mode |= UO_EXCL;
 
-    fd = uffs_open(file->path, mode);
+    fd = uffs_open(file->vnode->path, mode);
     if (fd < 0)
     {
         return uffs_result_to_dfs(uffs_get_error());
@@ -341,7 +341,7 @@ static int dfs_uffs_open(struct dfs_fd *file)
 
     file->data = (void *)fd;
     file->pos  = uffs_seek(fd, 0, USEEK_CUR);
-    file->size = uffs_seek(fd, 0, USEEK_END);
+    file->vnode->size = uffs_seek(fd, 0, USEEK_END);
     uffs_seek(fd, file->pos, USEEK_SET);
 
     if (oflag & O_APPEND)
@@ -351,7 +351,7 @@ static int dfs_uffs_open(struct dfs_fd *file)
     return 0;
 }
 
-static int dfs_uffs_close(struct dfs_fd *file)
+static int dfs_uffs_close(struct dfs_file *file)
 {
     int oflag;
     int fd;
@@ -374,12 +374,12 @@ static int dfs_uffs_close(struct dfs_fd *file)
     return uffs_result_to_dfs(uffs_get_error());
 }
 
-static int dfs_uffs_ioctl(struct dfs_fd *file, int cmd, void *args)
+static int dfs_uffs_ioctl(struct dfs_file *file, int cmd, void *args)
 {
     return -ENOSYS;
 }
 
-static int dfs_uffs_read(struct dfs_fd *file, void *buf, size_t len)
+static int dfs_uffs_read(struct dfs_file *file, void *buf, size_t len)
 {
     int fd;
     int char_read;
@@ -394,7 +394,7 @@ static int dfs_uffs_read(struct dfs_fd *file, void *buf, size_t len)
     return char_read;
 }
 
-static int dfs_uffs_write(struct dfs_fd *file,
+static int dfs_uffs_write(struct dfs_file *file,
                           const void *buf,
                           size_t len)
 {
@@ -412,7 +412,7 @@ static int dfs_uffs_write(struct dfs_fd *file,
     return char_write;
 }
 
-static int dfs_uffs_flush(struct dfs_fd *file)
+static int dfs_uffs_flush(struct dfs_file *file)
 {
     int fd;
     int result;
@@ -439,13 +439,13 @@ int uffs_seekdir(uffs_DIR *dir, long offset)
 }
 
 
-static int dfs_uffs_seek(struct dfs_fd *file,
-                         rt_off_t offset)
+static off_t dfs_uffs_seek(struct dfs_file *file,
+                           off_t offset)
 {
     int result;
 
     /* set offset as current offset */
-    if (file->type == FT_DIRECTORY)
+    if (file->vnode->type == FT_DIRECTORY)
     {
         uffs_rewinddir((uffs_DIR *)(file->data));
         result = uffs_seekdir((uffs_DIR *)(file->data), offset / sizeof(struct dirent));
@@ -455,7 +455,7 @@ static int dfs_uffs_seek(struct dfs_fd *file,
             return offset;
         }
     }
-    else if (file->type == FT_REGULAR)
+    else if (file->vnode->type == FT_REGULAR)
     {
         result = uffs_seek((int)(file->data), offset, USEEK_SET);
         if (result >= 0)
@@ -467,7 +467,7 @@ static int dfs_uffs_seek(struct dfs_fd *file,
 
 /* return the size of struct dirent*/
 static int dfs_uffs_getdents(
-    struct dfs_fd *file,
+    struct dfs_file *file,
     struct dirent *dirp,
     uint32_t count)
 {
@@ -504,8 +504,8 @@ static int dfs_uffs_getdents(
             return (uffs_result_to_dfs(uffs_get_error()));
         }
 
-        if (file->path[0] == '/' && !(file->path[1] == 0))
-            rt_snprintf(file_path, FILE_PATH_MAX, "%s/%s", file->path, uffs_d->d_name);
+        if (file->vnode->path[0] == '/' && !(file->vnode->path[1] == 0))
+            rt_snprintf(file_path, FILE_PATH_MAX, "%s/%s", file->vnode->path, uffs_d->d_name);
         else
             rt_strncpy(file_path, uffs_d->d_name, FILE_PATH_MAX);
 
@@ -604,7 +604,7 @@ static int dfs_uffs_stat(struct dfs_filesystem *fs, const char *path, struct sta
     st->st_dev  = 0;
     st->st_mode = s.st_mode;
     st->st_size = s.st_size;
-    st->st_mtime = s.st_mtime;
+    st->st_mtime = s.st_mtime_;
 
     return 0;
 }
