@@ -61,7 +61,7 @@
  * \note uffs cache the block info for opened directories and files,
  *       a practical value is 5 ~ MAX_OBJECT_HANDLE
  */
-#define MAX_CACHED_BLOCK_INFO	50
+#define MAX_CACHED_BLOCK_INFO	10
 
 /** 
  * \def MAX_PAGE_BUFFERS
@@ -69,7 +69,7 @@
  *       but few writing performance will be improved when this 
  *       value is become larger than 'max pages per block'
  */
-#define MAX_PAGE_BUFFERS		40
+#define MAX_PAGE_BUFFERS		20
 
 
 /** 
@@ -93,7 +93,7 @@
  *
  *       the smaller the value the frequently the buffer will be flushed.
  */
-#define MAX_DIRTY_PAGES_IN_A_BLOCK 32	
+#define MAX_DIRTY_PAGES_IN_A_BLOCK 8	
 
 /**
  * \def MAX_DIRTY_BUF_GROUPS
@@ -165,7 +165,7 @@
  * \def MAX_OBJECT_HANDLE
  * maximum number of object handle 
  */
-#define MAX_OBJECT_HANDLE	50
+#define MAX_OBJECT_HANDLE	10
 #define FD_SIGNATURE_SHIFT	6	
 
 
