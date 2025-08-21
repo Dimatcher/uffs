@@ -376,6 +376,11 @@ static int dfs_uffs_close(struct dfs_file *file)
 
 static int dfs_uffs_ioctl(struct dfs_file *file, int cmd, void *args)
 {
+    if (cmd == RT_FIOFTRUNCATE)
+    {
+        return uffs_ftruncate((int)(file->data), *((long*)args));
+    }
+
     return -ENOSYS;
 }
 
